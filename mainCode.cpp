@@ -1,5 +1,4 @@
 #include <iostream>
-#include <vector>
 using namespace std;
 
 // Product class
@@ -10,19 +9,13 @@ private:
     double price;
 
 public:
-    // Constructor
-    Product(int pid, string pname, double pprice) {
-        id = pid;
-        name = pname;
-        price = pprice;
-    }
+    Product() {} // Default constructor for array initialization
+    Product(int pid, string pname, double pprice) : id(pid), name(pname), price(pprice) {}
 
-    // Getter methods
     int getID() { return id; }
     string getName() { return name; }
     double getPrice() { return price; }
 
-    // Display product details
     void displayProduct() {
         cout << "Product ID: " << id << ", Name: " << name << ", Price: $" << price << endl;
     }
@@ -31,100 +24,138 @@ public:
 // Cart class
 class Cart {
 private:
-    vector<Product> items;  // List of products in the cart
+    Product items[10]; // Array to hold products, max 10 items for simplicity
+    int itemCount;
 
 public:
-    // Add product to the cart
+    Cart() : itemCount(0) {}
+
     void addProduct(Product p) {
-        items.push_back(p);
+        items[itemCount] = p;
+        itemCount++;
         cout << "Added to cart: " << p.getName() << endl;
     }
 
-    // Calculate the total price of products in the cart
     double calculateTotal() {
         double total = 0;
-        for (Product p : items) {
-            total += p.getPrice();
+        for (int i = 0; i < itemCount; i++) {
+            total += items[i].getPrice();
         }
         return total;
     }
 
-    // Display all items in the cart
     void displayCart() {
         cout << "\nCart Items: \n";
-        for (Product p : items) {
-            p.displayProduct();
+        for (int i = 0; i < itemCount; i++) {
+            items[i].displayProduct();
         }
     }
 };
 
-// Base User class
+// User class
 class User {
 protected:
     string username;
     string email;
 
 public:
-    // Constructor
-    User(string uname, string uemail) {
-        username = uname;
-        email = uemail;
-    }
+    User(string uname, string uemail) : username(uname), email(uemail) {}
 
-    // Virtual function for polymorphism (overriding in derived class)
     virtual void displayTotalAmount(Cart& cart) {
         double total = cart.calculateTotal();
-        cout << "User " << username << " (General): Total Amount: $" << total << endl;
+        cout << "User " << username << ": Total Amount: $" << total << endl;
     }
 
-    virtual ~User() {}  // Virtual destructor
+    virtual ~User() {}
 };
 
-// Derived PremiumUser class (Inheritance)
+// Premium User class
 class PremiumUser : public User {
 public:
-    // Constructor
     PremiumUser(string uname, string uemail) : User(uname, uemail) {}
 
-    // Override function for premium user
     void displayTotalAmount(Cart& cart) override {
         double total = cart.calculateTotal();
-        double discount = 0.10;  // 10% discount for premium users
+        double discount = 0.10;
         double finalAmount = total - (total * discount);
-        cout << "User " << username << " (Premium): Total Amount after Discount: $" << finalAmount << endl;
+        cout << "User " << username << " (Premium): Total after Discount: $" << finalAmount << endl;
     }
 };
+
+// Function to display available products
+void displayProducts(Product products[], int size) {
+    cout << "\nAvailable Products:\n";
+    for (int i = 0; i < size; i++) {
+        products[i].displayProduct();
+    }
+}
 
 // Main function
 int main() {
-    // Create some products
-    Product product1(1, "Laptop", 999.99);
-    Product product2(2, "Smartphone", 499.99);
+    // Create a list of products
+    Product products[4] = {
+        Product(1, "Laptop", 999.99),
+        Product(2, "Smartphone", 499.99),
+        Product(3, "Tablet", 299.99),
+        Product(4, "Headphones", 199.99)
+    };
 
-    // Create a general user and a premium user
-    User generalUser("John Doe", "john@example.com");
-    PremiumUser premiumUser("Alice Smith", "alice@example.com");
+    string userType, username, email;
+    int productChoice;
+    char moreItems;
+    bool isPremium;
 
-    // Create a shopping cart for each user
-    Cart generalCart;
-    Cart premiumCart;
+    // User type input
+    cout << "Welcome to the Online Shopping System!\n";
+    cout << "Are you a General User or Premium User? (Enter 'General' or 'Premium'): ";
+    cin >> userType;
 
-    // Add products to carts
-    generalCart.addProduct(product1);
-    generalCart.addProduct(product2);
+    // Collect user information
+    cout << "Enter your name: ";
+    cin.ignore(); // To ignore any leftover newline characters
+    getline(cin, username);
+    cout << "Enter your email: ";
+    getline(cin, email);
 
-    premiumCart.addProduct(product1);
-    premiumCart.addProduct(product2);
+    isPremium = (userType == "Premium");
 
-    // Display cart items and total for general user
-    cout << "\nGeneral User's Cart:\n";
-    generalCart.displayCart();
-    generalUser.displayTotalAmount(generalCart);
+    // Create user object based on user type
+    User* user;
+    if (isPremium) {
+        user = new PremiumUser(username, email);
+    } else {
+        user = new User(username, email);
+    }
 
-    // Display cart items and total for premium user
-    cout << "\nPremium User's Cart:\n";
-    premiumCart.displayCart();
-    premiumUser.displayTotalAmount(premiumCart);
+    Cart userCart;
+    
+    // Shopping process
+    do {
+        displayProducts(products, 4);
+
+        // Let user select a product
+        cout << "\nEnter the Product ID to add to the cart: ";
+        cin >> productChoice;
+
+        // Add the selected product to the user's cart
+        if (productChoice >= 1 && productChoice <= 4) {
+            userCart.addProduct(products[productChoice - 1]);
+        } else {
+            cout << "Invalid Product ID. Please try again.\n";
+        }
+
+        // Ask if user wants to add more items
+        cout << "Do you want to add more items to the cart? (y/n): ";
+        cin >> moreItems;
+    } while (moreItems == 'y' || moreItems == 'Y');
+
+    // Display the final cart and total amount
+    cout << "\nYour Cart:\n";
+    userCart.displayCart();
+    user->displayTotalAmount(userCart);
+
+    // Cleanup dynamic memory
+    delete user;
 
     return 0;
 }
