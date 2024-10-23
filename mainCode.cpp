@@ -1,7 +1,6 @@
 #include <iostream>
 using namespace std;
 
-// Product class
 class Product {
 private:
     int id;
@@ -9,7 +8,6 @@ private:
     double price;
 
 public:
-    Product() {} // Default constructor for array initialization
     Product(int pid, string pname, double pprice) : id(pid), name(pname), price(pprice) {}
 
     int getID() { return id; }
@@ -21,141 +19,145 @@ public:
     }
 };
 
-// Cart class
+// Cart class to handle products and their quantities
 class Cart {
 private:
-    Product items[10]; // Array to hold products, max 10 items for simplicity
-    int itemCount;
+    struct CartItem {
+        Product product;
+        int quantity;
+        CartItem(Product p, int qty) : product(p), quantity(qty) {}
+    };
+
+    CartItem* items[10];
+    int itemCount = 0;
 
 public:
-    Cart() : itemCount(0) {}
-
-    void addProduct(Product p) {
-        items[itemCount] = p;
+    void addProduct(Product p, int quantity) {
+        items[itemCount] = new CartItem(p, quantity);
         itemCount++;
-        cout << "Added to cart: " << p.getName() << endl;
     }
 
     double calculateTotal() {
         double total = 0;
         for (int i = 0; i < itemCount; i++) {
-            total += items[i].getPrice();
+            total += items[i]->product.getPrice() * items[i]->quantity;
         }
         return total;
     }
 
     void displayCart() {
-        cout << "\nCart Items: \n";
+        cout << "\nYour Cart:\n";
         for (int i = 0; i < itemCount; i++) {
-            items[i].displayProduct();
+            cout << items[i]->quantity << " x ";
+            items[i]->product.displayProduct();
         }
     }
 };
 
-// User class
+// User class with membership handling
 class User {
-protected:
+private:
     string username;
     string email;
-
-public:
-    User(string uname, string uemail) : username(uname), email(uemail) {}
-
-    virtual void displayTotalAmount(Cart& cart) {
-        double total = cart.calculateTotal();
-        cout << "User " << username << ": Total Amount: $" << total << endl;
-    }
-
-    virtual ~User() {}
-};
-
-// Premium User class
-class PremiumUser : public User {
-public:
-    PremiumUser(string uname, string uemail) : User(uname, uemail) {}
-
-    void displayTotalAmount(Cart& cart) override {
-        double total = cart.calculateTotal();
-        double discount = 0.10;
-        double finalAmount = total - (total * discount);
-        cout << "User " << username << " (Premium): Total after Discount: $" << finalAmount << endl;
-    }
-};
-
-// Function to display available products
-void displayProducts(Product products[], int size) {
-    cout << "\nAvailable Products:\n";
-    for (int i = 0; i < size; i++) {
-        products[i].displayProduct();
-    }
-}
-
-// Main function
-int main() {
-    // Create a list of products
-    Product products[4] = {
-        Product(1, "Laptop", 999.99),
-        Product(2, "Smartphone", 499.99),
-        Product(3, "Tablet", 299.99),
-        Product(4, "Headphones", 199.99)
-    };
-
-    string userType, username, email;
-    int productChoice;
-    char moreItems;
     bool isPremium;
 
-    // User type input
-    cout << "Welcome to the Online Shopping System!\n";
-    cout << "Are you a General User or Premium User? (Enter 'General' or 'Premium'): ";
-    cin >> userType;
+public:
+    User(string uname, string uemail, bool premium) : username(uname), email(uemail), isPremium(premium) {}
 
-    // Collect user information
-    cout << "Enter your name: ";
-    cin.ignore(); // To ignore any leftover newline characters
-    getline(cin, username);
-    cout << "Enter your email: ";
-    getline(cin, email);
-
-    isPremium = (userType == "Premium");
-
-    // Create user object based on user type
-    User* user;
-    if (isPremium) {
-        user = new PremiumUser(username, email);
-    } else {
-        user = new User(username, email);
+    void displayTotalAmount(Cart& cart) {
+        double total = cart.calculateTotal();
+        if (isPremium) {
+            double discount = total * 0.10;
+            total -= discount;
+            cout << "User " << username << " (Premium): Total after discount: $" << total << endl;
+        } else {
+            cout << "User " << username << ": Total Amount: $" << total << endl;
+        }
     }
 
-    Cart userCart;
-    
-    // Shopping process
-    do {
-        displayProducts(products, 4);
-
-        // Let user select a product
-        cout << "\nEnter the Product ID to add to the cart: ";
-        cin >> productChoice;
-
-        // Add the selected product to the user's cart
-        if (productChoice >= 1 && productChoice <= 4) {
-            userCart.addProduct(products[productChoice - 1]);
+    void toggleMembership() {
+        isPremium = !isPremium;
+        if (isPremium) {
+            cout << "You are now a Premium User!\n";
         } else {
-            cout << "Invalid Product ID. Please try again.\n";
+            cout << "You have canceled your Premium Membership.\n";
+        }
+    }
+};
+
+int main() {
+    Product product1(1, "Laptop", 999.99);
+    Product product2(2, "Smartphone", 499.99);
+    Product product3(3, "Tablet", 299.99);
+    Product product4(4, "Headphones", 199.99);
+
+    // User input for account details
+    string username, email, userType;
+    cout << "Are you a General User or Premium User? (Enter 'General' or 'Premium'): ";
+    cin >> userType;
+    cout << "Enter your name: ";
+    cin >> username;
+    cout << "Enter your email: ";
+    cin >> email;
+
+    bool isPremium = (userType == "Premium");
+    User user(username, email, isPremium);
+
+    Cart userCart;
+    char addMore = 'y';
+    int productId, quantity;
+
+    // Display available products
+    cout << "\nAvailable Products:\n";
+    product1.displayProduct();
+    product2.displayProduct();
+    product3.displayProduct();
+    product4.displayProduct();
+
+    // Adding products to the cart
+    do {
+        cout << "\nEnter the Product ID to add to the cart: ";
+        cin >> productId;
+
+        if (productId == 1) {
+            cout << "Enter quantity: ";
+            cin >> quantity;
+            userCart.addProduct(product1, quantity);
+        } else if (productId == 2) {
+            cout << "Enter quantity: ";
+            cin >> quantity;
+            userCart.addProduct(product2, quantity);
+        } else if (productId == 3) {
+            cout << "Enter quantity: ";
+            cin >> quantity;
+            userCart.addProduct(product3, quantity);
+        } else if (productId == 4) {
+            cout << "Enter quantity: ";
+            cin >> quantity;
+            userCart.addProduct(product4, quantity);
+        } else {
+            cout << "Invalid Product ID.\n";
         }
 
-        // Ask if user wants to add more items
         cout << "Do you want to add more items to the cart? (y/n): ";
-        cin >> moreItems;
-    } while (moreItems == 'y' || moreItems == 'Y');
+        cin >> addMore;
+    } while (addMore == 'y' || addMore == 'Y');
 
-    // Display the final cart and total amount
-    cout << "\nYour Cart:\n";
+    // Display cart and total for the user
     userCart.displayCart();
-    user->displayTotalAmount(userCart);
+    user.displayTotalAmount(userCart);
 
-    // Cleanup dynamic memory
-    delete user;
+    // Ask to change membership status
+    char changeMembership;
+    cout << "\nDo you want to change your membership status? (y/n): ";
+    cin >> changeMembership;
+
+    if (changeMembership == 'y' || changeMembership == 'Y') {
+        user.toggleMembership();
+    }
+
+    // Display total again after possible membership change
+    user.displayTotalAmount(userCart);
 
     return 0;
 }
