@@ -19,7 +19,6 @@ public:
     }
 };
 
-// Cart class to handle products
 class Cart {
 private:
     struct CartItem {
