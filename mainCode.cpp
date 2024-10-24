@@ -19,7 +19,7 @@ public:
     }
 };
 
-// Cart class to handle products and their quantities
+// Cart class to handle products
 class Cart {
 private:
     struct CartItem {
@@ -35,6 +35,7 @@ public:
     void addProduct(Product p, int quantity) {
         items[itemCount] = new CartItem(p, quantity);
         itemCount++;
+        cout << "Added " << p.getName() << " to cart." << endl;
     }
 
     double calculateTotal() {
@@ -54,38 +55,53 @@ public:
     }
 };
 
-// User class with membership handling
+// Base User class (for inheritance)
 class User {
-private:
+protected:
     string username;
     string email;
-    bool isPremium;
 
 public:
-    User(string uname, string uemail, bool premium) : username(uname), email(uemail), isPremium(premium) {}
+    User(string uname, string uemail) : username(uname), email(uemail) {}
 
-    void displayTotalAmount(Cart& cart) {
+    // Virtual function for polymorphism
+    virtual void displayTotalAmount(Cart& cart) {
         double total = cart.calculateTotal();
-        if (isPremium) {
-            double discount = total * 0.10;
-            total -= discount;
-            cout << "User " << username << " (Premium): Total after discount: $" << total << endl;
-        } else {
-            cout << "User " << username << ": Total Amount: $" << total << endl;
-        }
+        cout << "User " << username << ": Total Amount: $" << total << endl;
     }
 
-    void toggleMembership() {
-        isPremium = !isPremium;
-        if (isPremium) {
-            cout << "You are now a Premium User!\n";
-        } else {
-            cout << "You have canceled your Premium Membership.\n";
-        }
+    virtual ~User() {}  // Virtual destructor
+};
+
+// Derived GeneralUser class
+class GeneralUser : public User {
+public:
+    GeneralUser(string uname, string uemail) : User(uname, uemail) {}
+
+    void displayTotalAmount(Cart& cart) override {
+        double total = cart.calculateTotal();
+        cout << "User " << username << " (General): Total Amount: $" << total << endl;
+    }
+};
+
+// Derived PremiumUser class (10% discount)
+class PremiumUser : public User {
+private:
+    double discountPercentage = 0.10;
+
+public:
+    PremiumUser(string uname, string uemail) : User(uname, uemail) {}
+
+    void displayTotalAmount(Cart& cart) override {
+        double total = cart.calculateTotal();
+        double discount = total * discountPercentage;
+        total -= discount;
+        cout << "User " << username << " (Premium): Total after discount: $" << total << endl;
     }
 };
 
 int main() {
+    // Creating products
     Product product1(1, "Laptop", 999.99);
     Product product2(2, "Smartphone", 499.99);
     Product product3(3, "Tablet", 299.99);
@@ -93,6 +109,7 @@ int main() {
 
     // User input for account details
     string username, email, userType;
+    cout << "Welcome to the Online Shopping System!" << endl;
     cout << "Are you a General User or Premium User? (Enter 'General' or 'Premium'): ";
     cin >> userType;
     cout << "Enter your name: ";
@@ -100,14 +117,18 @@ int main() {
     cout << "Enter your email: ";
     cin >> email;
 
-    bool isPremium = (userType == "Premium");
-    User user(username, email, isPremium);
+    User* user;
+    if (userType == "Premium") {
+        user = new PremiumUser(username, email);  // Premium user
+    } else {
+        user = new GeneralUser(username, email);  // General user
+    }
 
     Cart userCart;
     char addMore = 'y';
     int productId, quantity;
 
-    // Display available products
+    // Display available products once
     cout << "\nAvailable Products:\n";
     product1.displayProduct();
     product2.displayProduct();
@@ -136,7 +157,7 @@ int main() {
             cin >> quantity;
             userCart.addProduct(product4, quantity);
         } else {
-            cout << "Invalid Product ID.\n";
+            cout << "Invalid Product ID. Please try again.\n";
         }
 
         cout << "Do you want to add more items to the cart? (y/n): ";
@@ -145,19 +166,8 @@ int main() {
 
     // Display cart and total for the user
     userCart.displayCart();
-    user.displayTotalAmount(userCart);
+    user->displayTotalAmount(userCart);
 
-    // Ask to change membership status
-    char changeMembership;
-    cout << "\nDo you want to change your membership status? (y/n): ";
-    cin >> changeMembership;
-
-    if (changeMembership == 'y' || changeMembership == 'Y') {
-        user.toggleMembership();
-    }
-
-    // Display total again after possible membership change
-    user.displayTotalAmount(userCart);
-
+    delete user;  // Clean up memory
     return 0;
 }
